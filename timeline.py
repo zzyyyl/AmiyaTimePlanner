@@ -91,17 +91,20 @@ if __name__ == '__main__':
 	if progressing_events_count:
 		print(message["progressing"][rand16(len(message["progressing"]))], end='\n\n')
 		for item in progressing_events_array:
-			print(f"now event: {item['event']}, {item['beginTime'].strftime('%H:%M')} - {item['endTime'].strftime('%H:%M')}")
+			print(f"now event: {item['event']}, {item['beginTime'].strftime('%H:%M')}-{item['endTime'].strftime('%H:%M')}")
 			print("Countdown:", item["endTime"] - now)
+			print()
 		print()
 		if waiting_events_count:
 			for item in waiting_events_array:
-				print(f"next event: {item['event']}, {item['beginTime'].strftime('%H:%M')} - {item['endTime'].strftime('%H:%M')}")
+				print(f"next event: {item['event']}, {item['beginTime'].strftime('%H:%M')}-{item['endTime'].strftime('%H:%M')}")
 				print("Countdown:", item["beginTime"] - now)
+				print()
 	elif waiting_events_count:
 		print(message["waiting"][rand16(len(message["waiting"]))], end='\n\n')
 		for item in waiting_events_array:
-			print(f"next event: {item['event']}, {item['beginTime'].strftime('%H:%M')} - {item['endTime'].strftime('%H:%M')}")
+			print(f"next event: {item['event']}, {item['beginTime'].strftime('%H:%M')}-{item['endTime'].strftime('%H:%M')}")
 			print("Countdown:", item["beginTime"] - now)
+			print()
 	else:
 		print(message["finish"][rand16(len(message["finish"]))], end='\n\n')
