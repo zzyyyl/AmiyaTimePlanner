@@ -1,5 +1,7 @@
 # AmiyaTimePlanner
 
+*This project is still in its infancy.*
+
 usage:
 
 1. `set.py`
