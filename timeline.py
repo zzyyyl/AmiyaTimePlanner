@@ -6,7 +6,7 @@ from hashlib import md5
 timeline_t = [('beginTime', datetime), ("endTime", datetime), ("event", dict)]
 
 message = {
-	"progressing": [
+	"ongoing": [
 		"博士，您还有许多事情需要处理。现在还不能休息哦。",
 		"ドクター、終わってない仕事がたくさんありますから、まだ休んじゃだめですよ。"
 	],
@@ -59,9 +59,9 @@ if __name__ == '__main__':
 		today_schedule.extend(day_schedule[todayYmd])
 
 	waiting_events = []
-	progressing_events = []
+	ongoing_events = []
 
-	progressing_events_count = 0
+	ongoing_events_count = 0
 	waiting_events_count = 0
 
 	for item in today_schedule:
@@ -73,8 +73,8 @@ if __name__ == '__main__':
 
 		if item["event"]:
 			if beginTime <= now and now <= endTime:
-				progressing_events_count += 1
-				progressing_events.append((beginTime, endTime, item["event"]))
+				ongoing_events_count += 1
+				ongoing_events.append((beginTime, endTime, item["event"]))
 			elif now < beginTime:
 				waiting_events_count += 1
 				waiting_events.append((beginTime, endTime, item["event"]))
@@ -83,18 +83,19 @@ if __name__ == '__main__':
 	waiting_events_array.sort(axis=0, order=('beginTime', 'endTime', 'event'))
 	# print(waiting_events)
 	# print(waiting_events_array)
-	progressing_events_array = np.array(progressing_events, dtype=timeline_t)
-	progressing_events_array.sort(axis=0, order=('beginTime', 'endTime', 'event'))
-	# print(progressing_events)
-	# print(progressing_events_array)
+	ongoing_events_array = np.array(ongoing_events, dtype=timeline_t)
+	ongoing_events_array.sort(axis=0, order=('beginTime', 'endTime', 'event'))
+	# print(ongoing_events)
+	# print(ongoing_events_array)
 
-	if progressing_events_count:
-		print(message["progressing"][rand16(len(message["progressing"]))], end='\n\n')
-		for item in progressing_events_array:
+	if ongoing_events_count:
+		print(message["ongoing"][rand16(len(message["ongoing"]))], end='\n\n')
+		print("---Ongoing---")
+		for item in ongoing_events_array:
 			print(f"now event: {item['event']}, {item['beginTime'].strftime('%H:%M')}-{item['endTime'].strftime('%H:%M')}")
 			print("Countdown:", item["endTime"] - now)
 			print()
-		print()
+		print("---Waiting---")
 		if waiting_events_count:
 			for item in waiting_events_array:
 				print(f"next event: {item['event']}, {item['beginTime'].strftime('%H:%M')}-{item['endTime'].strftime('%H:%M')}")
