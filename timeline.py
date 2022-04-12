@@ -20,44 +20,51 @@ message = {
 	]
 }
 
-
 def rand16(n):
 	return (md5(str(datetime.now().timestamp()).encode()).digest()[6] << 8
 		  | md5(str(datetime.now().timestamp()).encode()).digest()[9]) % n
 
-if __name__ == '__main__':
+def loadConfig():
 	try:
 		with open("timeline.json", "r", encoding="utf8") as f:
 			time_schedule = json.load(f)
 		assert type(time_schedule) == dict
 	except:
 		time_schedule = {}
-
 	if "week" in time_schedule:
-		week_schedule = time_schedule["week"]
-		assert type(week_schedule) == list
+		assert type(time_schedule["week"]) == list
 	else:
-		week_schedule = []
+		time_schedule["week"] = [[] for x in range(7)]
 	if "day" in time_schedule:
-		day_schedule = time_schedule["day"]
-		assert type(day_schedule) == dict
+		assert type(time_schedule["day"]) == dict
 	else:
-		day_schedule = {}
+		time_schedule["day"] = {}
+	return time_schedule
 
-	now = datetime.now()
-	print(now.strftime("%Y-%m-%d %H:%M:%S"), end='\n\n')
-
+def getDayPlan(day, time_schedule):
 	today_schedule = []
 
 	weekday = now.weekday()
+	week_schedule = time_schedule["week"]
 	if weekday < len(week_schedule):
+		assert type(week_schedule[weekday]) == list 
 		today_schedule.extend(week_schedule[weekday])
 
 	todayYmd = now.strftime("%Y-%m-%d")
+	day_schedule = time_schedule["day"]
 	if todayYmd in day_schedule:
 		assert type(day_schedule[todayYmd]) == list 
 		today_schedule.extend(day_schedule[todayYmd])
 
+	return today_schedule
+
+if __name__ == '__main__':
+	time_schedule = loadConfig()
+
+	now = datetime.now()
+	print(now.strftime("%Y-%m-%d %H:%M:%S"), end='\n\n')
+
+	today_schedule = getDayPlan(now, time_schedule)
 	waiting_events = []
 	ongoing_events = []
 
