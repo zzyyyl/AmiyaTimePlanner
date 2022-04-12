@@ -50,7 +50,7 @@ def loadConfig():
 		time_schedule["day"] = {}
 	return time_schedule
 
-def dumpConfig():
+def dumpConfig(time_schedule):
 	with open("timeline.json", "w", encoding="utf8") as f:
 		json.dump(time_schedule, f, indent=2)
 
@@ -83,7 +83,7 @@ def appendWeekEvent(params: str, now, time_schedule):
 			"endTime": endTime,
 			"event": event
 		})
-		dumpConfig()
+		dumpConfig(time_schedule=time_schedule)
 		print("Append success.")
 
 # Day today 13:30-15:30 doSomething
@@ -159,7 +159,7 @@ def appendDayEvent(params: str, now, time_schedule):
 			"endTime": endTime,
 			"event": event
 		})
-		dumpConfig()
+		dumpConfig(time_schedule=time_schedule)
 		print("Append success.")
 
 def appendEvent(input_string, now, time_schedule):
