@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 import json
 import numpy as np
-from hashlib import md5
 
 timeline_t = [('beginTime', datetime), ("endTime", datetime), ("event", dict)]
 
@@ -11,42 +10,77 @@ lower_week = [x.lower() for x in WEEK]
 DAY = ["Today", "Tomorrow"]
 lower_day = [x.lower() for x in DAY]
 
-def rand16(n):
-	return (md5(str(datetime.now().timestamp()).encode()).digest()[6] << 8
-		  | md5(str(datetime.now().timestamp()).encode()).digest()[9]) % n
-
-def DumpConfig():
-	with open("timeline.json", "w", encoding="utf8") as f:
-		json.dump(time_schedule, f, indent=2)
-
-# Week Mon 13:30-15:30 doSomething
-def append_week_event(s: str):
-	assert type(s) == str
-	s = s.split(' ')
-	if s[0].lower() in lower_week:
-		week_index = lower_week.index(s[0].lower())
-	else:
-		week_index = int(s[0])
-	if '-' in s[1]:
-		s[1] = s[1].split('-')
-		beginTime = s[1][0]
-		endTime = s[1][-1]
-	else:
-		beginTime = s[1]
-		endTime = s[2]
-	event = s[-1]
-	print(WEEK[week_index], f"{beginTime}-{endTime}, {event}")
+def accept() -> bool:
 	choice = 'n'
 	while True:
 		choice = input("(y/n)").lower()
 		if choice in ['y', 'n']: break
-	if choice == 'y':
+	return choice == 'y'
+
+def isTime(s: str) -> bool:
+	time_param = s.split(':')
+	if len(time_param) != 2:
+		return False
+	hours = time_param[0]
+	minutes = time_param[1]
+	if not (hours.isdecimal() and minutes.isdecimal()):
+		return False
+	hours = int(hours)
+	minutes = int(minutes)
+	if hours < 0 or hours > 23:
+		return False
+	if minutes < 0 or minutes > 59:
+		return False
+	return True
+
+def loadConfig():
+	try:
+		with open("timeline.json", "r", encoding="utf8") as f:
+			time_schedule = json.load(f)
+		assert type(time_schedule) == dict
+	except:
+		time_schedule = {}
+	if "week" in time_schedule:
+		assert type(time_schedule["week"]) == list
+	else:
+		time_schedule["week"] = [[] for x in range(7)]
+	if "day" in time_schedule:
+		assert type(time_schedule["day"]) == dict
+	else:
+		time_schedule["day"] = {}
+	return time_schedule
+
+def dumpConfig():
+	with open("timeline.json", "w", encoding="utf8") as f:
+		json.dump(time_schedule, f, indent=2)
+
+# Week 0 13:30-15:30 doSomething
+# Week Mon 13:30-15:30 doSomething
+def appendWeekEvent(s: str):
+	assert type(s) == str
+	s = s.split(' ', 1)
+	if s[0].lower() in lower_week:
+		week_index = lower_week.index(s[0].lower())
+	else:
+		week_index = int(s[0])
+	s = s[1].split(' ', 1)
+	if '-' in s[0]:
+		assert len(s[0].split('-')) == 2
+		beginTime, endTime = s[0].split('-')
+	else:
+		beginTime = s[0]
+		s = s[1].split(' ', 1)
+		endTime = s[0]
+	event = s[1] #allows space
+	assert (isTime(beginTime) and isTime(endTime))
+	print(WEEK[week_index], f"{beginTime}-{endTime}, {event}")
+	if accept():
 		week_schedule[week_index].append({
 			"beginTime": beginTime,
 			"endTime": endTime,
 			"event": event
 		})
-		DumpConfig()
+		dumpConfig()
 		print("Append success.")
 
 # Day today 13:30-15:30 doSomething
@@ -55,7 +89,7 @@ def append_week_event(s: str):
 # Day thisweek Mon 13:30-15:30 doSomething
 # Day nextweek Mon 13:30-15:30 doSomething
 # Day next1week Mon 13:30-15:30 doSomething
-def append_day_event(s: str):
+def appendDayEvent(s: str):
 	assert type(s) == str
 	s = s.split(' ', 1)
 	param = s[0].lower()
@@ -95,28 +129,23 @@ def append_day_event(s: str):
 			try: day_formatted = datetime.strptime(param, "%y-%m-%d")
 			except: pass
 			else: break
-			try:
-				day_formatted = datetime.strptime(param, "%m-%d")
-				day_formatted = day_formatted.replace(year=datetime.now().year)
+			try: day_formatted = datetime.strptime(param, "%m-%d").replace(year=datetime.now().year)
 			except: pass
 			else: break
 			raise ValueError("Unrecognized time data " + param)
-	s = s[1].split(' ')
+	s = s[1].split(' ', 1)
 	if '-' in s[0]:
-		s[0] = s[0].split('-')
-		beginTime = s[0][0]
-		endTime = s[0][-1]
+		assert len(s[0].split('-')) == 2
+		beginTime, endTime = s[0].split('-')
 	else:
 		beginTime = s[0]
-		endTime = s[1]
-	event = s[-1]
+		s = s[1].split(' ', 1)
+		endTime = s[0]
+	event = s[1] #allows space
+	assert (isTime(beginTime) and isTime(endTime))
 	dateYmd = day_formatted.strftime("%Y-%m-%d")
 	print(dateYmd, f"{beginTime}-{endTime}, {event}")
-	choice = 'n'
-	while True:
-		choice = input("(y/n)").lower()
-		if choice in ['y', 'n']: break
-	if choice == 'y':
+	if accept():
 		if dateYmd not in day_schedule:
 			day_schedule[dateYmd] = []
 		day_schedule[dateYmd].append({
@@ -124,23 +153,12 @@ def append_day_event(s: str):
 			"endTime": endTime,
 			"event": event
 		})
-		DumpConfig()
+		dumpConfig()
 		print("Append success.")
 
 if __name__ == '__main__':
-	try:
-		with open("timeline.json", "r", encoding="utf8") as f:
-			time_schedule = json.load(f)
-		assert type(time_schedule) == dict
-	except:
-		time_schedule = {}
-
-	if "week" not in time_schedule:
-		time_schedule["week"] = [[] for x in range(7)]
+	time_schedule = loadConfig()
 	week_schedule = time_schedule["week"]
-
-	if "day" not in time_schedule:
-		time_schedule["day"] = {}
 	day_schedule = time_schedule["day"]
 
 	while True:
@@ -148,9 +166,9 @@ if __name__ == '__main__':
 		s = s.split(' ', 1)
 
 		if s[0].lower() == 'week':
-			append_week_event(s[1])
+			appendWeekEvent(s[1])
 		elif s[0].lower() == 'day':
-			append_day_event(s[1])
+			appendDayEvent(s[1])
 
 	s = json.dumps(time_schedule, indent=4)
 	print(s)
