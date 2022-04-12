@@ -41,7 +41,7 @@ def loadConfig():
 		time_schedule["day"] = {}
 	return time_schedule
 
-def getDayPlan(day, time_schedule):
+def getDayPlan(now, time_schedule):
 	today_schedule = []
 
 	weekday = now.weekday()
@@ -58,18 +58,9 @@ def getDayPlan(day, time_schedule):
 
 	return today_schedule
 
-if __name__ == '__main__':
-	time_schedule = loadConfig()
-
-	now = datetime.now()
-	print(now.strftime("%Y-%m-%d %H:%M:%S"), end='\n\n')
-
-	today_schedule = getDayPlan(now, time_schedule)
-	waiting_events = []
+def classify(now, today_schedule):
 	ongoing_events = []
-
-	ongoing_events_count = 0
-	waiting_events_count = 0
+	waiting_events = []
 
 	for item in today_schedule:
 		beginTime = datetime.strptime(item["beginTime"], "%H:%M")
@@ -80,20 +71,27 @@ if __name__ == '__main__':
 
 		if item["event"]:
 			if beginTime <= now and now <= endTime:
-				ongoing_events_count += 1
 				ongoing_events.append((beginTime, endTime, item["event"]))
 			elif now < beginTime:
-				waiting_events_count += 1
 				waiting_events.append((beginTime, endTime, item["event"]))
+
+	ongoing_events_array = np.array(ongoing_events, dtype=timeline_t)
+	ongoing_events_array.sort(axis=0, order=('beginTime', 'endTime', 'event'))
 
 	waiting_events_array = np.array(waiting_events, dtype=timeline_t)
 	waiting_events_array.sort(axis=0, order=('beginTime', 'endTime', 'event'))
-	# print(waiting_events)
-	# print(waiting_events_array)
-	ongoing_events_array = np.array(ongoing_events, dtype=timeline_t)
-	ongoing_events_array.sort(axis=0, order=('beginTime', 'endTime', 'event'))
-	# print(ongoing_events)
-	# print(ongoing_events_array)
+
+	return ongoing_events_array, waiting_events_array
+
+def main():
+	now = datetime.now()
+	time_schedule = loadConfig()
+	today_schedule = getDayPlan(now, time_schedule)
+	ongoing_events_array, waiting_events_array = classify(now, today_schedule)
+	ongoing_events_count = len(ongoing_events_array)
+	waiting_events_count = len(waiting_events_array)
+
+	print(now.strftime("%Y-%m-%d %H:%M:%S"), end='\n\n')
 
 	if ongoing_events_count:
 		print(message["ongoing"][rand16(len(message["ongoing"]))], end='\n\n')
@@ -102,8 +100,8 @@ if __name__ == '__main__':
 			print(f"now event: {item['event']}, {item['beginTime'].strftime('%H:%M')}-{item['endTime'].strftime('%H:%M')}")
 			print("Countdown:", item["endTime"] - now)
 			print()
-		print("---Waiting---")
 		if waiting_events_count:
+			print("---Waiting---")
 			for item in waiting_events_array:
 				print(f"next event: {item['event']}, {item['beginTime'].strftime('%H:%M')}-{item['endTime'].strftime('%H:%M')}")
 				print("Countdown:", item["beginTime"] - now)
@@ -116,3 +114,6 @@ if __name__ == '__main__':
 			print()
 	else:
 		print(message["finish"][rand16(len(message["finish"]))], end='\n\n')
+
+if __name__ == '__main__':
+	main()
