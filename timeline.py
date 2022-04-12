@@ -1,7 +1,7 @@
 from datetime import datetime
 import json
 import numpy as np
-from hashlib import md5
+import random
 
 timeline_t = [('beginTime', datetime), ("endTime", datetime), ("event", dict)]
 
@@ -19,10 +19,6 @@ message = {
 		"ドクター、お仕事お疲れ様です。"
 	]
 }
-
-def rand16(n):
-	return (md5(str(datetime.now().timestamp()).encode()).digest()[6] << 8
-		  | md5(str(datetime.now().timestamp()).encode()).digest()[9]) % n
 
 def loadConfig():
 	try:
@@ -85,6 +81,7 @@ def classify(now, today_schedule):
 
 def main():
 	now = datetime.now()
+	random.seed(now.timestamp())
 	time_schedule = loadConfig()
 	today_schedule = getDayPlan(now, time_schedule)
 	ongoing_events_array, waiting_events_array = classify(now, today_schedule)
@@ -94,7 +91,7 @@ def main():
 	print(now.strftime("%Y-%m-%d %H:%M:%S"), end='\n\n')
 
 	if ongoing_events_count:
-		print(message["ongoing"][rand16(len(message["ongoing"]))], end='\n\n')
+		print(message["ongoing"][random.randint(0, len(message["ongoing"])-1)], end='\n\n')
 		print("---Ongoing---")
 		for item in ongoing_events_array:
 			print(f"now event: {item['event']}, {item['beginTime'].strftime('%H:%M')}-{item['endTime'].strftime('%H:%M')}")
@@ -107,13 +104,13 @@ def main():
 				print("Countdown:", item["beginTime"] - now)
 				print()
 	elif waiting_events_count:
-		print(message["waiting"][rand16(len(message["waiting"]))], end='\n\n')
+		print(message["waiting"][random.randint(0, len(message["waiting"])-1)], end='\n\n')
 		for item in waiting_events_array:
 			print(f"next event: {item['event']}, {item['beginTime'].strftime('%H:%M')}-{item['endTime'].strftime('%H:%M')}")
 			print("Countdown:", item["beginTime"] - now)
 			print()
 	else:
-		print(message["finish"][rand16(len(message["finish"]))], end='\n\n')
+		print(message["finish"][random.randint(0, len(message["finish"])-1)], end='\n\n')
 
 if __name__ == '__main__':
 	main()
