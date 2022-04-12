@@ -105,6 +105,7 @@ def main():
 				print()
 	elif waiting_events_count:
 		print(message["waiting"][random.randint(0, len(message["waiting"])-1)], end='\n\n')
+		print("---Waiting---")
 		for item in waiting_events_array:
 			print(f"next event: {item['event']}, {item['beginTime'].strftime('%H:%M')}-{item['endTime'].strftime('%H:%M')}")
 			print("Countdown:", item["beginTime"] - now)

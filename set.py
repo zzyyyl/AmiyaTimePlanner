@@ -56,7 +56,7 @@ def dumpConfig(time_schedule):
 
 # Week 0 13:30-15:30 doSomething
 # Week Mon 13:30-15:30 doSomething
-def appendWeekEvent(params: str, now, time_schedule):
+def addWeekEvent(params: str, now, time_schedule):
 	assert "week" in time_schedule
 	week_schedule = time_schedule["week"]
 	assert type(week_schedule) == list
@@ -84,7 +84,7 @@ def appendWeekEvent(params: str, now, time_schedule):
 			"event": event
 		})
 		dumpConfig(time_schedule=time_schedule)
-		print("Append success.")
+		print("Adding success.")
 
 # Day today 13:30-15:30 doSomething
 # Day 0 13:30-15:30 doSomething
@@ -92,7 +92,7 @@ def appendWeekEvent(params: str, now, time_schedule):
 # Day thisweek Mon 13:30-15:30 doSomething
 # Day nextweek Mon 13:30-15:30 doSomething
 # Day next1week Mon 13:30-15:30 doSomething
-def appendDayEvent(params: str, now, time_schedule):
+def addDayEvent(params: str, now, time_schedule):
 	assert "day" in time_schedule
 	day_schedule = time_schedule["day"]
 	assert type(day_schedule) == dict
@@ -160,21 +160,21 @@ def appendDayEvent(params: str, now, time_schedule):
 			"event": event
 		})
 		dumpConfig(time_schedule=time_schedule)
-		print("Append success.")
+		print("Adding success.")
 
-def appendEvent(input_string, now, time_schedule):
+def addEvent(input_string, now, time_schedule):
 	scheduleType, params = input_string.split(' ', 1)
 	scheduleType = scheduleType.lower()
 	if scheduleType == "week":
-		appendWeekEvent(params=params, now=now, time_schedule=time_schedule)
+		addWeekEvent(params=params, now=now, time_schedule=time_schedule)
 	elif scheduleType == "day":
-		appendDayEvent(params=params, now=now, time_schedule=time_schedule)
+		addDayEvent(params=params, now=now, time_schedule=time_schedule)
 
 def main():
 	time_schedule = loadConfig()
 	while True:
 		try:
-			appendEvent(input_string=input("Append event:"),
+			addEvent(input_string=input("Add event:"),
 						time_schedule=time_schedule,
 						now=datetime.now())
 		except (KeyboardInterrupt, EOFError):
