@@ -10,6 +10,8 @@ lower_week = [x.lower() for x in WEEK]
 DAY = ["Today", "Tomorrow"]
 lower_day = [x.lower() for x in DAY]
 
+# TODO. 把 assert 改为自定义错误类型
+
 def accept() -> bool:
 	choice = 'n'
 	while True:
@@ -163,12 +165,15 @@ def addDayEvent(params: str, now, time_schedule):
 		print("Adding success.")
 
 def addEvent(input_string, now, time_schedule):
+	assert ' ' in input_string
 	scheduleType, params = input_string.split(' ', 1)
 	scheduleType = scheduleType.lower()
 	if scheduleType == "week":
 		addWeekEvent(params=params, now=now, time_schedule=time_schedule)
 	elif scheduleType == "day":
 		addDayEvent(params=params, now=now, time_schedule=time_schedule)
+	else:
+		assert False
 
 def main():
 	time_schedule = loadConfig()
