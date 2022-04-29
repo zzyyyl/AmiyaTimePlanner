@@ -14,7 +14,7 @@ def main():
             print(e.__repr__())
             raise
         except EOFError:
-        	break
+            break
         except Exception as e:
             raise
 
