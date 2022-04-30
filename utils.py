@@ -43,8 +43,10 @@ def assertOfTypes(param, Ts: List[type], paramName: str) -> None:
     raise TypeError(f"`{paramName}` is of type `{type(param)}`, but should be `{Ts}`.")
 
 
-def seParams(params: str) -> Tuple[str, Optional[str]]:
-    # separams = separate params
+def seParams(params: Optional[str]) -> Tuple[str, Optional[str]]:
+    # seParams = separate params
+    if params == None:
+        return None, None
     assertOfType(params, str, "params")
     paramList = params.strip().split(' ', 1)
     if len(paramList) == 1:
@@ -53,17 +55,19 @@ def seParams(params: str) -> Tuple[str, Optional[str]]:
         return paramList[0], paramList[1]
 
 
-def getTimeFromStr(time_str: str) -> Union[bool, datetime]:
+def getTimeFromStr(time_str: Optional[str], now_date=datetime.now()) -> Union[bool, datetime]:
+    if time_str == None:
+        return False
     assertOfType(time_str, str, "time_str")
     while True:
-        try: time = datetime.strptime(time_str, "%H:%M")
+        try: _time = datetime.strptime(time_str, "%H:%M")
         except: pass
         else: break
-        try: time = datetime.strptime(time_str, "%H:%M:%S")
+        try: _time = datetime.strptime(time_str, "%H:%M:%S")
         except: pass
         else: break
         return False
-    return time
+    return now_date.replace(hour=_time.hour, minute=_time.minute, second=_time.second)
 
 
 def loadConfig(config_path="timeline.json", config=None):
@@ -123,11 +127,9 @@ def getDateFromParams(params: str, now=datetime.now()) -> Tuple[datetime, Option
     param, params = seParams(params)
     param = param.lower()
     if param in lower_day:
-        day_index = lower_day.index(param)
-        day_formatted = now + timedelta(days=day_index)
+        date = now + timedelta(days=lower_day.index(param))
     elif param.isdecimal():
-        day_index = int(param)
-        day_formatted = now + timedelta(days=day_index)
+        date = now + timedelta(days=int(param))
     elif param[:4] == "next" and param[-4:] == "week":
         if param[4:-4] == '':
             week_count = 1
@@ -139,8 +141,7 @@ def getDateFromParams(params: str, now=datetime.now()) -> Tuple[datetime, Option
             weekday_index = lower_week.index(param)
         else:
             weekday_index = int(param)
-        day_index = week_count * 7 - now.weekday() + weekday_index
-        day_formatted = now + timedelta(days=day_index)
+        date = now + timedelta(days=week_count * 7 - now.weekday() + weekday_index)
     elif param == "thisweek":
         param, params = seParams(params)
         param = param.lower()
@@ -148,21 +149,21 @@ def getDateFromParams(params: str, now=datetime.now()) -> Tuple[datetime, Option
             weekday_index = lower_week.index(param)
         else:
             weekday_index = int(param)
-        day_index = weekday_index - now.weekday()
-        day_formatted = now + timedelta(days=day_index)
+        date = now + timedelta(days=weekday_index - now.weekday())
     else:
         while True:
-            try: day_formatted = datetime.strptime(param, "%Y-%m-%d")
+            try: date = datetime.strptime(param, "%Y-%m-%d")
             except: pass
             else: break
-            try: day_formatted = datetime.strptime(param, "%y-%m-%d")
+            try: date = datetime.strptime(param, "%y-%m-%d")
             except: pass
             else: break
-            try: day_formatted = datetime.strptime(param, "%m-%d").replace(year=now.year)
+            try: date = datetime.strptime(param, "%m-%d").replace(year=now.year)
             except: pass
             else: break
-            raise TypeError("Unrecognized time data " + param)
-    return (day_formatted, params)
+            raise TypeError("Unrecognized time data: " + param)
+        date = now.replace(year=date.year, month=date.month, day=date.day)
+    return (date, params)
 
 
 def getTimeRangeFromParams(params: str, now=datetime.now()):
@@ -172,8 +173,7 @@ def getTimeRangeFromParams(params: str, now=datetime.now()):
         beginTime, endTime = param.split('-')
     else:
         beginTime = param
-        param, params = seParams(params)
-        endTime = param
+        endTime, params = seParams(params)
     assert (getTimeFromStr(beginTime) and getTimeFromStr(endTime))
     return ((beginTime, endTime), params)
 
@@ -245,8 +245,7 @@ def addWeekEvent(params: str, now, time_schedule):
         beginTime, endTime = param.split('-')
     else:
         beginTime = param
-        param, params = seParams(params)
-        endTime = param
+        endTime, params = seParams(params)
     event = params #allows space
     assert (getTimeFromStr(beginTime) and getTimeFromStr(endTime))
     print(WEEK[week_index], f"{beginTime}-{endTime}, {event}")
@@ -271,10 +270,10 @@ def addDayEvent(params: str, now, time_schedule):
     day_schedule = time_schedule["day"]
     assertOfType(day_schedule, dict, "day_schedule")
 
-    day_formatted, params = getDateFromParams(params=params, now=now)
+    date, params = getDateFromParams(params=params, now=now)
     (beginTime, endTime), event = getTimeRangeFromParams(params=params, now=now)
 
-    dateYmd = day_formatted.strftime("%Y-%m-%d")
+    dateYmd = date.strftime("%Y-%m-%d")
     print(dateYmd, f"{beginTime}-{endTime}, {event}")
     if accept():
         if dateYmd not in day_schedule:
