@@ -1,5 +1,6 @@
 import json
 import random
+import re
 import numpy as np
 from datetime import datetime, timedelta
 from typing import Optional, Tuple, Union, List
@@ -32,14 +33,14 @@ message = {
 
 def assertOfType(param, T: type, paramName: str) -> None:
     if type(param) != T:
-        raise ValueError(f"`{paramName}` is of type `{type(param)}`, but should be `{T}`.")
+        raise TypeError(f"`{paramName}` is of type `{type(param)}`, but should be `{T}`.")
 
 
 def assertOfTypes(param, Ts: List[type], paramName: str) -> None:
     for T in Ts:
         if type(param) == T:
             return
-    raise ValueError(f"`{paramName}` is of type `{type(param)}`, but should be `{Ts}`.")
+    raise TypeError(f"`{paramName}` is of type `{type(param)}`, but should be `{Ts}`.")
 
 
 def seParams(params: str) -> Tuple[str, Optional[str]]:
@@ -111,6 +112,14 @@ def getDateFromParams(params: str, now=datetime.now()) -> Tuple[datetime, Option
     if not params:
         return (now, None)
     assertOfType(params, str, "params")
+    if not re.match(
+        pattern=r"(today|tomorrow)" +\
+                r"|((thisweek|nextweek|next-?[0-9]+week) +(mon|tue|wed|thr|fri|sat|sun))" +\
+                r"|((thisweek|nextweek|next-?[0-9]+week) +(-?[0-9]+))" +\
+                r"|([0-9]{4}-[0-9]{1,2}-[0-9]{1,2})" +\
+                r"|([0-9]{2}-[0-9]{1,2}-[0-9]{1,2})|([0-9]{1,2}-[0-9]{1,2})",
+        string=params.strip(), flags=re.I):
+        raise TypeError(f"Params `{params}` do not match the date rule.")
     param, params = seParams(params)
     param = param.lower()
     if param in lower_day:
@@ -152,7 +161,7 @@ def getDateFromParams(params: str, now=datetime.now()) -> Tuple[datetime, Option
             try: day_formatted = datetime.strptime(param, "%m-%d").replace(year=now.year)
             except: pass
             else: break
-            raise ValueError("Unrecognized time data " + param)
+            raise TypeError("Unrecognized time data " + param)
     return (day_formatted, params)
 
 
@@ -194,12 +203,12 @@ def classify(now, today_schedule):
     for item in today_schedule:
         beginTime = getTimeFromStr(item["beginTime"])
         if not beginTime:
-            raise ValueError("Unrecognized beginTime: " + beginTime)
+            raise TypeError("Unrecognized beginTime: " + beginTime)
         beginTime = now.replace(hour=beginTime.hour, minute=beginTime.minute, second=beginTime.second)
 
         endTime = getTimeFromStr(item["endTime"])
         if not endTime:
-            raise ValueError("Unrecognized endTime: " + endTime)
+            raise TypeError("Unrecognized endTime: " + endTime)
         endTime = now.replace(hour=endTime.hour, minute=endTime.minute, second=endTime.second)
 
         if item["event"]:
@@ -286,7 +295,7 @@ def addEvent(input_string, now, time_schedule):
 
     param, params = seParams(input_string)
     if not params:
-        raise ValueError("Invalid input.")
+        raise TypeError("Invalid input.")
         return
 
     scheduleType = param.lower()
@@ -295,7 +304,7 @@ def addEvent(input_string, now, time_schedule):
     elif scheduleType == "day":
         addDayEvent(params=params, now=now, time_schedule=time_schedule)
     else:
-        raise ValueError("Invalid input.")
+        raise TypeError("Invalid input.")
 
 
 def timeline(now = datetime.now(), config_path="timeline.json", config=None):
