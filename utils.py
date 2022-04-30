@@ -2,7 +2,7 @@ import json
 import random
 import numpy as np
 from datetime import datetime, timedelta
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple, Union, List
 
 # TODO. 把 assert 改为自定义错误类型
 
@@ -30,7 +30,30 @@ message = {
 }
 
 
+def assertOfType(param, T: type, paramName: str) -> None:
+    if type(param) != T:
+        raise ValueError(f"`{paramName}` is of type `{type(param)}`, but should be `{T}`.")
+
+
+def assertOfTypes(param, Ts: List[type], paramName: str) -> None:
+    for T in Ts:
+        if type(param) == T:
+            return
+    raise ValueError(f"`{paramName}` is of type `{type(param)}`, but should be `{Ts}`.")
+
+
+def seParams(params: str) -> Tuple[str, Optional[str]]:
+    # separams = separate params
+    assertOfType(params, str, "params")
+    paramList = params.strip().split(' ', 1)
+    if len(paramList) == 1:
+        return paramList[0], None
+    else:
+        return paramList[0], paramList[1]
+
+
 def getTimeFromStr(time_str: str) -> Union[bool, datetime]:
+    assertOfType(time_str, str, "time_str")
     while True:
         try: time = datetime.strptime(time_str, "%H:%M")
         except: pass
@@ -44,27 +67,27 @@ def getTimeFromStr(time_str: str) -> Union[bool, datetime]:
 
 def loadConfig(config_path="timeline.json", config=None):
     if config:
+        assertOfTypes(config, [str, dict], "config")
         if type(config) == str:
             time_schedule = json.loads(config)
-            if type(time_schedule) != dict:
-                raise RuntimeError(f"type(time_schedule) is `{type(time_schedule)}`, but should be `dict`.")
+            assertOfType(time_schedule, dict, "time_schedule")
         elif type(config) == dict:
             time_schedule = config
         else:
-            raise RuntimeError(f"type(config) is `{type(config)}`, but should be `str` or `dict`.")
+            raise RuntimeError("Unknown Error.")
     else:
         try:
             with open(config_path, "r", encoding="utf8") as f:
                 time_schedule = json.load(f)
-            assert type(time_schedule) == dict
+            assertOfType(time_schedule, dict, "time_schedule")
         except:
             time_schedule = {}
     if "week" in time_schedule:
-        assert type(time_schedule["week"]) == list
+        assertOfType(time_schedule["week"], list, "time_schedule['week']")
     else:
         time_schedule["week"] = [[] for x in range(7)]
     if "day" in time_schedule:
-        assert type(time_schedule["day"]) == dict
+        assertOfType(time_schedule["day"], dict, "time_schedule['day']")
     else:
         time_schedule["day"] = {}
     return time_schedule
@@ -87,10 +110,9 @@ def accept() -> bool:
 def getDateFromParams(params: str, now=datetime.now()) -> Tuple[datetime, Optional[str]]:
     if not params:
         return (now, None)
-    if type(params) != str:
-        raise TypeError(f"type(params) is `{type(params)}`, but should be `str`.")
-    params = params.split(' ', 1)
-    param = params[0].lower()
+    assertOfType(params, str, "params")
+    param, params = seParams(params)
+    param = param.lower()
     if param in lower_day:
         day_index = lower_day.index(param)
         day_formatted = now + timedelta(days=day_index)
@@ -102,8 +124,8 @@ def getDateFromParams(params: str, now=datetime.now()) -> Tuple[datetime, Option
             week_count = 1
         else:
             week_count = int(param[4:-4])
-        params = params[1].split(' ', 1)
-        param = params[0].lower()
+        param, params = seParams(params)
+        param = param.lower()
         if param in lower_week:
             weekday_index = lower_week.index(param)
         else:
@@ -111,8 +133,8 @@ def getDateFromParams(params: str, now=datetime.now()) -> Tuple[datetime, Option
         day_index = week_count * 7 - now.weekday() + weekday_index
         day_formatted = now + timedelta(days=day_index)
     elif param == "thisweek":
-        params = params[1].split(' ', 1)
-        param = params[0].lower()
+        param, params = seParams(params)
+        param = param.lower()
         if param in lower_week:
             weekday_index = lower_week.index(param)
         else:
@@ -131,26 +153,20 @@ def getDateFromParams(params: str, now=datetime.now()) -> Tuple[datetime, Option
             except: pass
             else: break
             raise ValueError("Unrecognized time data " + param)
-    if len(params) == 1:
-        return (day_formatted, None)
-    else:
-        return (day_formatted, params[1])
+    return (day_formatted, params)
 
 
 def getTimeRangeFromParams(params: str, now=datetime.now()):
-    params = params.split(' ', 1)
-    if '-' in params[0]:
-        assert len(params[0].split('-')) == 2
-        beginTime, endTime = params[0].split('-')
+    param, params = seParams(params)
+    if '-' in param:
+        assert len(param.split('-')) == 2
+        beginTime, endTime = param.split('-')
     else:
-        beginTime = params[0]
-        params = params[1].split(' ', 1)
-        endTime = params[0]
+        beginTime = param
+        param, params = seParams(params)
+        endTime = param
     assert (getTimeFromStr(beginTime) and getTimeFromStr(endTime))
-    if len(params) == 1:
-        return ((beginTime, endTime), None)
-    else:
-        return ((beginTime, endTime), params[1])
+    return ((beginTime, endTime), params)
 
 
 def getDayPlan(now, time_schedule):
@@ -159,13 +175,13 @@ def getDayPlan(now, time_schedule):
     weekday = now.weekday()
     week_schedule = time_schedule["week"]
     if weekday < len(week_schedule):
-        assert type(week_schedule[weekday]) == list 
+        assertOfType(week_schedule[weekday], list, f"week_schedule[{weekday}]")
         today_schedule.extend(week_schedule[weekday])
 
     todayYmd = now.strftime("%Y-%m-%d")
     day_schedule = time_schedule["day"]
     if todayYmd in day_schedule:
-        assert type(day_schedule[todayYmd]) == list 
+        assertOfType(day_schedule[todayYmd], list, f"day_schedule[{todayYmd}]")
         today_schedule.extend(day_schedule[todayYmd])
 
     return today_schedule
@@ -206,22 +222,23 @@ def classify(now, today_schedule):
 def addWeekEvent(params: str, now, time_schedule):
     assert "week" in time_schedule
     week_schedule = time_schedule["week"]
-    assert type(week_schedule) == list
-    assert type(params) == str
-    params = params.split(' ', 1)
-    if params[0].lower() in lower_week:
-        week_index = lower_week.index(params[0].lower())
+    assertOfType(week_schedule, list, "week_schedule")
+    assertOfType(params, str, "params")
+    param, params = seParams(params)
+    param = param.lower()
+    if param in lower_week:
+        week_index = lower_week.index(param)
     else:
-        week_index = int(params[0])
-    params = params[1].split(' ', 1)
-    if '-' in params[0]:
-        assert len(params[0].split('-')) == 2
-        beginTime, endTime = params[0].split('-')
+        week_index = int(param)
+    param, params = seParams(params)
+    if '-' in param:
+        assert len(param.split('-')) == 2
+        beginTime, endTime = param.split('-')
     else:
-        beginTime = params[0]
-        params = params[1].split(' ', 1)
-        endTime = params[0]
-    event = params[1] #allows space
+        beginTime = param
+        param, params = seParams(params)
+        endTime = param
+    event = params #allows space
     assert (getTimeFromStr(beginTime) and getTimeFromStr(endTime))
     print(WEEK[week_index], f"{beginTime}-{endTime}, {event}")
     if accept():
@@ -243,7 +260,7 @@ def addWeekEvent(params: str, now, time_schedule):
 def addDayEvent(params: str, now, time_schedule):
     assert "day" in time_schedule
     day_schedule = time_schedule["day"]
-    assert type(day_schedule) == dict
+    assertOfType(day_schedule, dict, "day_schedule")
 
     day_formatted, params = getDateFromParams(params=params, now=now)
     (beginTime, endTime), event = getTimeRangeFromParams(params=params, now=now)
@@ -267,13 +284,12 @@ def addEvent(input_string, now, time_schedule):
         raise EOFError() # TODO: 应改为自定义错误类型
         return
 
-    params = input_string.split(' ', 1)
-    if len(params) <= 1:
+    param, params = seParams(input_string)
+    if not params:
         raise ValueError("Invalid input.")
         return
 
-    scheduleType = params[0].lower()
-    params = params[1]
+    scheduleType = param.lower()
     if scheduleType == "week":
         addWeekEvent(params=params, now=now, time_schedule=time_schedule)
     elif scheduleType == "day":
