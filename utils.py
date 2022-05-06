@@ -112,7 +112,9 @@ def accept() -> bool:
     return choice == 'y'
 
 
-def getDateFromParams(params: str, now=datetime.now()) -> Tuple[datetime, Optional[str]]:
+def getDateFromParams(params: str, now=None) -> Tuple[datetime, Optional[str]]:
+    if now == None:
+        now = datetime.now()
     if not params:
         return (now, None)
     assertOfType(params, str, "params")
@@ -166,7 +168,9 @@ def getDateFromParams(params: str, now=datetime.now()) -> Tuple[datetime, Option
     return (date, params)
 
 
-def getTimeRangeFromParams(params: str, now=datetime.now()):
+def getTimeRangeFromParams(params: str, now=None) -> Tuple[Tuple[datetime, datetime], str]:
+    if now == None:
+        now = datetime.now()
     param, params = seParams(params)
     if '-' in param:
         assert len(param.split('-')) == 2
